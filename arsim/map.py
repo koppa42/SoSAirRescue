@@ -19,9 +19,9 @@ class Position:
         # 地点名称
         self.name = name
         
-        # 经度
+        # 经度（负为西）
         self.longitude = longitude
-        # 纬度
+        # 纬度（负为南）
         self.latitude = latitude
 
         # 基础信息
@@ -64,34 +64,26 @@ class Position:
     @staticmethod
     def _distance_flat(p1: 'Position', p2: 'Position') -> float:
         return math.sqrt(((p1.longitude - p2.longitude) * 111) ** 2 + ((p1.latitude - p2.latitude) * 111) ** 2)
-    
-    @staticmethod
-    def _to_radians(angle: float) -> float:
-        '''
-            将角度值转化为弧度制
-        '''
-        return angle * math.pi / 180
 
     @staticmethod
     def _distance_vincenty(p1: 'Position', p2: 'Position', circleCount: int = 40) -> float:
         '''
             计算两个位置间的距离（m）
-            https://en.wikipedia.org/wiki/Vincenty%27s_formulae
+            https:#en.wikipedia.org/wiki/Vincenty%27s_formulae
         '''
-        a = 6378137
+        a = 6378137.0
         b = 6356752.314245
         f = 1 / 298.257223563
 
-        L = Position._to_radians(p1.longitude - p2.longitude)
-        U1 = math.atan((1 - f) * math.tan(Position._to_radians(p1.latitude)))
-        U2 = math.atan((1 - f) * math.tan(Position._to_radians(p2.latitude)))
+        L = math.radians(p1.longitude) - math.radians(p2.longitude)
+        U1 = math.atan((1 - f) * math.tan(math.radians(p1.latitude)))
+        U2 = math.atan((1 - f) * math.tan(math.radians(p2.latitude)))
         sinU1, cosU1 = math.sin(U1), math.cos(U1)
         sinU2, cosU2 = math.sin(U2), math.cos(U2)
         lam, lamP = L, math.pi
         cosSqAlpha, sinSigma, cos2SigmaM, cosSigma, sigma = 0, 0, 0, 0, 0
         
         # 迭代循环
-        circleCount -= 1
         while abs(lam - lamP) > 1e-12 and circleCount > 0:
             sinLam, cosLam = math.sin(lam), math.cos(lam)
             sinSigma = math.sqrt((cosU2 * sinLam) * (cosU2 * sinLam) + (cosU1 * sinU2 - sinU1 * cosU2 * cosLam) *
@@ -122,14 +114,12 @@ class Position:
         result = b * A * (sigma - deltaSigma)
         return result
 
-
-
     @staticmethod
     def _distance_haversine(p1: 'Position', p2: 'Position') -> float:
-        lng1 = Position._to_radians(p1.longitude)
-        lat1 = Position._to_radians(p1.latitude)
-        lng2 = Position._to_radians(p2.longitude)
-        lat2 = Position._to_radians(p2.latitude)
+        lng1 = math.radians(p1.longitude)
+        lat1 = math.radians(p1.latitude)
+        lng2 = math.radians(p2.longitude)
+        lat2 = math.radians(p2.latitude)
 
         a = lat1 - lat2
         b = lng1 - lng2
@@ -137,9 +127,3 @@ class Position:
         return 2 * math.asin(math.sqrt(math.sin(a / 2) * math.sin(a / 2) + 
                                        math.cos(lat1) * math.cos(lat2) * math.sin(b / 2) * math.sin(b / 2))) * 6378.137
     
-
-if __name__ == "__main__":
-    a = Position("1", 75, 75, 0, 0, 900, 0, 0, 30, 0, 3, 0)
-    b = Position("2", 12.2, 12.2, 0, 0, 900, 0, 0, 30, 0, 3, 0)
-    print(Position._distance_vincenty(a, b) / 1000)
-    print(Position._distance_haversine(a, b))
