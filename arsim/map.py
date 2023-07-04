@@ -1,0 +1,145 @@
+from typing import Literal, Optional
+import math
+
+DistanceCalculateMethod = Literal["Flat"] | Literal["Vincenty"] | Literal["Haversine"]
+
+class Map:
+    ...
+
+class FailConvertException(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
+
+class Position:
+    _distance_method: DistanceCalculateMethod = 'Vincenty'
+
+    def __init__(self, name: str, longitude: float, latitude: float, helicopter_area: float, fixed_area: float,
+                 air_work_area: float, supply: int, rescue_people: int, trapped_people: int, device: int,
+                 patient: int, water: int) -> None:
+        # 地点名称
+        self.name = name
+        
+        # 经度
+        self.longitude = longitude
+        # 纬度
+        self.latitude = latitude
+
+        # 基础信息
+        # 直升机可降落面积
+        self.helicopter_area = helicopter_area
+        # 固定翼飞机可降落面积
+        self.fixed_area = fixed_area
+        # 当前空中作业面积，超出面积则无法作业
+        self.air_work_area = air_work_area
+
+        # 可提供资源
+        # 可提供救援物资量
+        self.supply = supply
+        # 可提供的救援人员数量
+        self.rescue_people = rescue_people
+        # 现有受困群众数量
+        self.trapped_people = trapped_people
+        # 现有重型救灾装备数量
+        self.device = device
+        # 现有重病患者数量
+        self.patient = patient
+        # 当前地点可提供的水量
+        self.water = water
+
+    @staticmethod
+    def distance(p1: 'Position', p2: 'Position', method: Optional[DistanceCalculateMethod] = None) -> float:
+        '''
+            计算两个地点之间的距离（km）
+        '''
+        if method is None:
+            method = Position._distance_method
+
+        if method == "Flat":
+            return Position._distance_flat(p1, p2)
+        elif method == "Vincenty":
+            return Position._distance_vincenty(p1, p2) / 1000
+        elif method == "Haversine":
+            return Position._distance_haversine(p1, p2)
+
+    @staticmethod
+    def _distance_flat(p1: 'Position', p2: 'Position') -> float:
+        return math.sqrt(((p1.longitude - p2.longitude) * 111) ** 2 + ((p1.latitude - p2.latitude) * 111) ** 2)
+    
+    @staticmethod
+    def _to_radians(angle: float) -> float:
+        '''
+            将角度值转化为弧度制
+        '''
+        return angle * math.pi / 180
+
+    @staticmethod
+    def _distance_vincenty(p1: 'Position', p2: 'Position', circleCount: int = 40) -> float:
+        '''
+            计算两个位置间的距离（m）
+            https://en.wikipedia.org/wiki/Vincenty%27s_formulae
+        '''
+        a = 6378137
+        b = 6356752.314245
+        f = 1 / 298.257223563
+
+        L = Position._to_radians(p1.longitude - p2.longitude)
+        U1 = math.atan((1 - f) * math.tan(Position._to_radians(p1.latitude)))
+        U2 = math.atan((1 - f) * math.tan(Position._to_radians(p2.latitude)))
+        sinU1, cosU1 = math.sin(U1), math.cos(U1)
+        sinU2, cosU2 = math.sin(U2), math.cos(U2)
+        lam, lamP = L, math.pi
+        cosSqAlpha, sinSigma, cos2SigmaM, cosSigma, sigma = 0, 0, 0, 0, 0
+        
+        # 迭代循环
+        circleCount -= 1
+        while abs(lam - lamP) > 1e-12 and circleCount > 0:
+            sinLam, cosLam = math.sin(lam), math.cos(lam)
+            sinSigma = math.sqrt((cosU2 * sinLam) * (cosU2 * sinLam) + (cosU1 * sinU2 - sinU1 * cosU2 * cosLam) *
+                                 (cosU1 * sinU2 - sinU1 * cosU2 * cosLam))
+            if (sinSigma == 0):
+                return 0
+            cosSigma = sinU1 * sinU2 + cosU1 * cosU2 * cosLam
+            sigma = math.atan2(sinSigma, cosSigma)
+            alpha = math.asin(cosU1 * cosU2 * sinLam / sinSigma)
+            cosSqAlpha = math.cos(alpha) * math.cos(alpha)
+            cos2SigmaM = cosSigma - 2 * sinU1 * sinU2 / cosSqAlpha
+            C = f / 16 * cosSqAlpha * (4 + f * (4 - 3 * cosSqAlpha))
+            lamP = lam
+            lam = L + (1 - C) * f * math.sin(alpha) * (sigma + C * sinSigma 
+                                                       * (cos2SigmaM + C * cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM)))
+            circleCount -= 1
+
+            
+        if circleCount == 0:
+            raise FailConvertException("未能成功转化为距离")
+            
+        uSq = cosSqAlpha * (a * a - b * b) / (b * b)
+        A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)))
+        B = uSq / 1024 * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)))
+        deltaSigma = B * sinSigma * (cos2SigmaM + B / 4 * (cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM) - 
+                        B / 6 * cos2SigmaM * (-3 + 4 * sinSigma * sinSigma) * (-3 + 4 * cos2SigmaM * cos2SigmaM)))
+        
+        result = b * A * (sigma - deltaSigma)
+        return result
+
+
+
+    @staticmethod
+    def _distance_haversine(p1: 'Position', p2: 'Position') -> float:
+        lng1 = Position._to_radians(p1.longitude)
+        lat1 = Position._to_radians(p1.latitude)
+        lng2 = Position._to_radians(p2.longitude)
+        lat2 = Position._to_radians(p2.latitude)
+
+        a = lat1 - lat2
+        b = lng1 - lng2
+
+        return 2 * math.asin(math.sqrt(math.sin(a / 2) * math.sin(a / 2) + 
+                                       math.cos(lat1) * math.cos(lat2) * math.sin(b / 2) * math.sin(b / 2))) * 6378.137
+    
+
+if __name__ == "__main__":
+    a = Position("1", 75, 75, 0, 0, 900, 0, 0, 30, 0, 3, 0)
+    b = Position("2", 12.2, 12.2, 0, 0, 900, 0, 0, 30, 0, 3, 0)
+    print(Position._distance_vincenty(a, b) / 1000)
+    print(Position._distance_haversine(a, b))

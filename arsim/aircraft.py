@@ -2,6 +2,7 @@ from typing import Literal
 
 AircraftAbilitySpecial = ( Literal["Reconnoitre"] | Literal["Freight"] | Literal["Hanging"] | Literal["Manned"] | Literal["Winch"] 
                              | Literal["Medical"] | Literal["Fire"] | Literal["Sea"] )
+AircraftType = Literal["Helicopter"] | Literal["FixedWing"]
 
 class AircraftAbility:
     _map = { "Reconnoitre": 0b1, "Freight": 0b10, "Hanging": 0b100, "Manned": 0b1000,
@@ -40,7 +41,7 @@ class Aircraft:
                   person_on_off_time: float = 60, supply_load_time: float = 0.1, device_load_time: float = 1200, 
                   patient_on_off_time: float = 600, water_weight: float = 3, water_load_time: float = 900, 
                   extinguishing_time: float = 900, search_time: float = 10.68, winch_person_time: float = 150, 
-                  winch_patient_time: float = 600) -> None:
+                  winch_patient_time: float = 600, type: AircraftType = "Helicopter") -> None:
         # 飞机属性
         # 飞机价格（亿元）
         self.price: float = price
@@ -60,9 +61,9 @@ class Aircraft:
         self.fuel_consumption_per_unit_time: float = fuel_consumption_per_unit_time
         # 最大载人数量
         self.max_capacity: int = max_capacity
-        # 内载荷上限
+        # 内载荷上限（kg）
         self.max_internal_load: float = max_internal_load
-        # 外载荷上限
+        # 外载荷上限（kg）
         self.max_external_load: float = max_external_load
         # 单次保障加油时间（秒）
         self.fuel_fill_time: float = fuel_fill_time
@@ -88,17 +89,17 @@ class Aircraft:
         self.winch_patient_time: float = winch_patient_time
         
         # 携带的救援物资量
-        self.now_supply: float = 0
+        self.now_supply: int = 0
         # 携带的救援人员数量
-        self.now_resuce_people: float = 0
+        self.now_resuce_people: int = 0
         # 吊运的救援设备数量
-        self.now_device: float = 0
+        self.now_device: int = 0
         # 携带的受困群众数量
         self.now_trapped_people: int = 0
         # 携带的重病患者数量
         self.now_ill_people: int = 0
         # 携带的水量
-        self.now_water: float = 0
+        self.now_water: int = 0
 
 
 Mi26 = Aircraft(2.10, 0, AircraftAbility("Freight", "Hanging", "Manned", "Fire"), 805, 805, 12000, 255, 3000, 82, 20000, 15000,
