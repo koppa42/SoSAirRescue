@@ -100,13 +100,3 @@ class Aircraft:
         self.now_ill_people: int = 0
         # 携带的水量
         self.now_water: int = 0
-
-
-Mi26 = Aircraft(2.10, 0, AircraftAbility("Freight", "Hanging", "Manned", "Fire"), 805, 805, 12000, 255, 3000, 82, 20000, 15000,
-                fuel_fill_time=1200, person_on_off_time=60, supply_load_time=0.1, device_load_time=1200, water_weight=15, 
-                water_load_time=900, extinguishing_time=900)
-Mi171 = Aircraft(0.46, 0, AircraftAbility("Freight", "Manned", "Winch", "Fire"), 356, 356, 1700, 240, 1175, 26, 4000, 3000,
-                 water_weight=3)
-AC313 = Aircraft(1.00, 0, AircraftAbility("Freight", "Manned", "Winch", "Fire"), 281, 281, 3500, 251, 1065, 27, 4000, 5000,
-                 water_weight=5)
-# todo
