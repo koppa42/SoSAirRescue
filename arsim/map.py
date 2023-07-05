@@ -3,12 +3,14 @@ import math
 
 DistanceCalculateMethod = Literal["Flat"] | Literal["Vincenty"] | Literal["Haversine"]
 
-class Map:
-    ...
-
 class FailConvertException(Exception):
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
+
+
+class Map:
+    ...
+
 
 class Position:
     _distance_method: DistanceCalculateMethod = 'Vincenty'
