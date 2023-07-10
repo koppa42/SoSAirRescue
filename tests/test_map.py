@@ -31,12 +31,10 @@ class TestMap(unittest.TestCase):
 
     def test_getitem(self):
         tmp = self.map["1"]
-        
+
         self.assertIsNotNone(tmp)
-        if tmp is not None:
-            self.assertEqual(tmp[0], self.pos[0])
+        self.assertEqual(tmp[0], self.pos[0])
         tmp2 = self.map["3"]
 
         self.assertIsNotNone(tmp2)
-        if tmp2 is not None:
-            self.assertTupleEqual(tmp2, (self.pos[2], self.pos[3]))
+        self.assertTupleEqual(tmp2, (self.pos[2], self.pos[3]))

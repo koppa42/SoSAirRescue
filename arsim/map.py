@@ -23,7 +23,7 @@ class Map:
             else:
                 self.map[p.name] = p
 
-    def __getitem__(self, index: str) -> Optional[tuple['Position', ...]]:
+    def __getitem__(self, index: str) -> tuple['Position', ...]:
         if index in self.map:
             ref = self.map[index]
             if isinstance(ref, Position):
@@ -31,7 +31,7 @@ class Map:
             else:
                 return ref
         else:
-            return None
+            return ()
 
 
 
