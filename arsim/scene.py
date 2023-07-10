@@ -1,6 +1,7 @@
 from .aircraft import Aircraft
 from .map import Map
 
+
 class Scene:
     def __init__(self) -> None:
         self.aircraft: list[Aircraft] = []
