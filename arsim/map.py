@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 import math
 
 DistanceCalculateMethod = Literal["Flat"] | Literal["Vincenty"] | Literal["Haversine"]
@@ -9,7 +9,30 @@ class FailConvertException(Exception):
 
 
 class Map:
-    ...
+    def __init__(self, *pos: 'Position') -> None:
+        self.position: list[Position] = list(pos)
+        self.map: dict[str, Union[Position, tuple[Position, ...]]] = {}
+
+        for p in pos:
+            if p.name in self.map:
+                ref = self.map[p.name]
+                if isinstance(ref, Position):
+                    self.map[p.name] = (ref, p)
+                else:
+                    self.map[p.name] = ref + (p, )
+            else:
+                self.map[p.name] = p
+
+    def __getitem__(self, index: str) -> tuple['Position', ...]:
+        if index in self.map:
+            ref = self.map[index]
+            if isinstance(ref, Position):
+                return (ref, )
+            else:
+                return ref
+        else:
+            return ()
+
 
 
 class Position:
