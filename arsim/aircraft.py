@@ -35,14 +35,15 @@ class AircraftAbility:
 
 
 class Aircraft:
-    def __init__( self, price: float, current_fuel: float, ability: AircraftAbility, rotor_area: float, air_area: float,
+    def __init__( self, price: float, name: str, ability: AircraftAbility, rotor_area: float, air_area: float,
                   max_fuel: float, cruising_speed: float, fuel_consumption_per_unit_time: float, max_capacity: int, 
                   max_internal_load: float, max_external_load: float, * , fuel_fill_time: float = 1200, 
                   person_on_off_time: float = 60, supply_load_time: float = 0.1, device_load_time: float = 1200, 
                   patient_on_off_time: float = 600, water_weight: float = 3, water_load_time: float = 900, 
                   extinguishing_time: float = 900, search_time: float = 10.68, winch_person_time: float = 150, 
-                  winch_patient_time: float = 600, type: AircraftType = "Helicopter") -> None:
+                  winch_patient_time: float = 600, type: AircraftType = "Helicopter", current_fuel: float = 0) -> None:
         # 飞机属性
+        self.name: str = name
         # 飞机价格（亿元）
         self.price: float = price
         # 当前油量，油量为 0 时，飞机自动迫降
