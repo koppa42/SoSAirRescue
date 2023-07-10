@@ -18,3 +18,25 @@ class TestPosition(unittest.TestCase):
         self.assertAlmostEqual(m.Position.distance(self.pos[1], self.pos[3]), 11681.313898, delta=0.1)
         self.assertAlmostEqual(m.Position.distance(self.pos[2], self.pos[3]), 11973.417122, delta=0.1)
 
+
+class TestMap(unittest.TestCase):
+    def setUp(self) -> None:
+        self.pos = [
+            m.Position("1", 75, 75, 0, 0, 900, 0, 0, 30, 0, 3, 0),
+            m.Position("2", 12.2, 12.2, 0, 0, 900, 0, 0, 30, 0, 3, 0),
+            m.Position("3", 10, 10, 0, 0, 900, 0, 0, 30, 0, 3, 0),
+            m.Position("3", 120, 10, 0, 0, 900, 0, 0, 30, 0, 3, 0)
+        ]
+        self.map = m.Map(*self.pos)
+
+    def test_getitem(self):
+        tmp = self.map["1"]
+        
+        self.assertIsNotNone(tmp)
+        if tmp is not None:
+            self.assertEqual(tmp[0], self.pos[0])
+        tmp2 = self.map["3"]
+
+        self.assertIsNotNone(tmp2)
+        if tmp2 is not None:
+            self.assertTupleEqual(tmp2, (self.pos[2], self.pos[3]))
