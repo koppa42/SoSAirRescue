@@ -47,8 +47,12 @@ class AircraftAbility:
             if _key in args:
                 self.map |= AircraftAbility._map[_key]
 
-    def can(self, ability: AircraftAbilitySpecial) -> bool:
-        return AircraftAbility._map[ability] & self.map != 0
+    def can(self, *ability: AircraftAbilitySpecial) -> bool:
+        flag = True
+        for ab in ability:
+            if AircraftAbility._map[ab] & self.map == 0:
+                return False
+        return True
 
 
 class Aircraft:
@@ -139,3 +143,15 @@ class Aircraft:
         self.now_ill_people: int = 0
         # 携带的水量
         self.now_water: int = 0
+
+    @property
+    def now_internal(self) -> float:
+        return self.now_supply
+
+    @property
+    def now_external(self) -> float:
+        return self.now_water * 1_000 + self.now_device * 10_000
+    
+    @property
+    def now_people(self) -> int:
+        return self.now_trapped_people + self.now_ill_people + self.now_resuce_people
