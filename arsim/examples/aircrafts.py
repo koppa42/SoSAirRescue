@@ -233,7 +233,7 @@ ChangYing5E = Aircraft(
     100,
     300,
     search_time=3.96,
-    type="FixedWing",
+    a_type="FixedWing",
 )
 YiLong2H = Aircraft(
     0.19,
@@ -248,5 +248,5 @@ YiLong2H = Aircraft(
     200,
     400,
     search_time=2.58,
-    type="FixedWing",
+    a_type="FixedWing",
 )

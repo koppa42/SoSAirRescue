@@ -81,7 +81,7 @@ class Aircraft:
         search_time: float = 10.68,
         winch_person_time: float = 150,
         winch_patient_time: float = 600,
-        type: AircraftType = "Helicopter",
+        a_type: AircraftType = "Helicopter",
         current_fuel: float = 0,
     ) -> None:
         # 飞机属性
@@ -143,6 +143,9 @@ class Aircraft:
         self.now_ill_people: int = 0
         # 携带的水量
         self.now_water: int = 0
+
+        # 飞机类型
+        self.type: AircraftType = a_type
 
     @property
     def now_internal(self) -> float:

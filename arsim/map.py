@@ -1,7 +1,9 @@
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, Union, Callable
 import math
+from .aircraft import Aircraft
 
 DistanceCalculateMethod = Literal["Flat"] | Literal["Vincenty"] | Literal["Haversine"]
+PositionType = Literal["Sea"] | Literal["Land"]
 
 
 class FailConvertException(Exception):
@@ -52,36 +54,46 @@ class Position:
         device: int,
         patient: int,
         water: int,
+        /,
+        p_type: PositionType = "Land",
+        special_condition: Optional[Callable[["Position", Aircraft], bool]] = None,
     ) -> None:
         # 地点名称
-        self.name = name
+        self.name: str = name
 
         # 经度（负为西）
-        self.longitude = longitude
+        self.longitude: float = longitude
         # 纬度（负为南）
-        self.latitude = latitude
+        self.latitude: float = latitude
 
         # 基础信息
         # 直升机可降落面积
-        self.helicopter_area = helicopter_area
+        self.helicopter_area: float = helicopter_area
         # 固定翼飞机可降落面积
-        self.fixed_area = fixed_area
+        self.fixed_area: float = fixed_area
         # 当前空中作业面积，超出面积则无法作业
-        self.air_work_area = air_work_area
+        self.air_work_area: float = air_work_area
 
         # 可提供资源
         # 可提供救援物资量
-        self.supply = supply
+        self.supply: int = supply
         # 可提供的救援人员数量
-        self.rescue_people = rescue_people
+        self.rescue_people: int = rescue_people
         # 现有受困群众数量
-        self.trapped_people = trapped_people
+        self.trapped_people: int = trapped_people
         # 现有重型救灾装备数量
-        self.device = device
+        self.device: int = device
         # 现有重病患者数量
-        self.patient = patient
+        self.patient: int = patient
         # 当前地点可提供的水量
-        self.water = water
+        self.water: int = water
+
+        # 地点的位置
+        self.type: PositionType = p_type
+        # 特殊需求
+        self.special_condition: Optional[
+            Callable[["Position", Aircraft], bool]
+        ] = special_condition
 
     @staticmethod
     def distance(
