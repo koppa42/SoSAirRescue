@@ -1,12 +1,29 @@
 from typing import Literal
 
-AircraftAbilitySpecial = ( Literal["Reconnoitre"] | Literal["Freight"] | Literal["Hanging"] | Literal["Manned"] | Literal["Winch"] 
-                             | Literal["Medical"] | Literal["Fire"] | Literal["Sea"] )
+AircraftAbilitySpecial = (
+    Literal["Reconnoitre"]
+    | Literal["Freight"]
+    | Literal["Hanging"]
+    | Literal["Manned"]
+    | Literal["Winch"]
+    | Literal["Medical"]
+    | Literal["Fire"]
+    | Literal["Sea"]
+)
 AircraftType = Literal["Helicopter"] | Literal["FixedWing"]
 
+
 class AircraftAbility:
-    _map = { "Reconnoitre": 0b1, "Freight": 0b10, "Hanging": 0b100, "Manned": 0b1000,
-             "Winch": 0b1_0000, "Medical": 0b10_0000, "Fire": 0b100_0000, "Sea": 0b1000_0000 }
+    _map = {
+        "Reconnoitre": 0b1,
+        "Freight": 0b10,
+        "Hanging": 0b100,
+        "Manned": 0b1000,
+        "Winch": 0b1_0000,
+        "Medical": 0b10_0000,
+        "Fire": 0b100_0000,
+        "Sea": 0b1000_0000,
+    }
     # 侦察功能
     Reconnoitre = 0b1
     # 货运功能
@@ -29,20 +46,46 @@ class AircraftAbility:
         for _key in AircraftAbility._map:
             if _key in args:
                 self.map |= AircraftAbility._map[_key]
-        
-    def can(self, ability: AircraftAbilitySpecial) -> bool:
-        return AircraftAbility._map[ability] & self.map != 0
+
+    def can(self, *ability: AircraftAbilitySpecial) -> bool:
+        flag = True
+        for ab in ability:
+            if AircraftAbility._map[ab] & self.map == 0:
+                return False
+        return True
 
 
 class Aircraft:
-    def __init__( self, price: float, current_fuel: float, ability: AircraftAbility, rotor_area: float, air_area: float,
-                  max_fuel: float, cruising_speed: float, fuel_consumption_per_unit_time: float, max_capacity: int, 
-                  max_internal_load: float, max_external_load: float, * , fuel_fill_time: float = 1200, 
-                  person_on_off_time: float = 60, supply_load_time: float = 0.1, device_load_time: float = 1200, 
-                  patient_on_off_time: float = 600, water_weight: float = 3, water_load_time: float = 900, 
-                  extinguishing_time: float = 900, search_time: float = 10.68, winch_person_time: float = 150, 
-                  winch_patient_time: float = 600, type: AircraftType = "Helicopter") -> None:
+    def __init__(
+        self,
+        price: float,
+        name: str,
+        ability: AircraftAbility,
+        rotor_area: float,
+        air_area: float,
+        max_fuel: float,
+        cruising_speed: float,
+        fuel_consumption_per_unit_time: float,
+        max_capacity: int,
+        max_internal_load: float,
+        max_external_load: float,
+        *,
+        fuel_fill_time: float = 1200,
+        person_on_off_time: float = 60,
+        supply_load_time: float = 0.1,
+        device_load_time: float = 1200,
+        patient_on_off_time: float = 600,
+        water_weight: float = 3,
+        water_load_time: float = 900,
+        extinguishing_time: float = 900,
+        search_time: float = 10.68,
+        winch_person_time: float = 150,
+        winch_patient_time: float = 600,
+        a_type: AircraftType = "Helicopter",
+        current_fuel: float = 0,
+    ) -> None:
         # 飞机属性
+        self.name: str = name
         # 飞机价格（亿元）
         self.price: float = price
         # 当前油量，油量为 0 时，飞机自动迫降
@@ -87,7 +130,7 @@ class Aircraft:
         self.winch_person_time: float = winch_person_time
         # 单个伤患绞车上下机时间（秒）
         self.winch_patient_time: float = winch_patient_time
-        
+
         # 携带的救援物资量
         self.now_supply: int = 0
         # 携带的救援人员数量
@@ -100,3 +143,18 @@ class Aircraft:
         self.now_ill_people: int = 0
         # 携带的水量
         self.now_water: int = 0
+
+        # 飞机类型
+        self.type: AircraftType = a_type
+
+    @property
+    def now_internal(self) -> float:
+        return self.now_supply
+
+    @property
+    def now_external(self) -> float:
+        return self.now_water * 1_000 + self.now_device * 10_000
+    
+    @property
+    def now_people(self) -> int:
+        return self.now_trapped_people + self.now_ill_people + self.now_resuce_people
