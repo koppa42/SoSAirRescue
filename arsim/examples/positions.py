@@ -73,6 +73,7 @@ class DisasterArea(Position):
         self.need_rescue_people: int = rescue_people
         self.need_device: int = device
         self.search: tuple[bool, float] = search
+        self.already_search: float = self.search[1]
 
 
 class Hospital(Position):
