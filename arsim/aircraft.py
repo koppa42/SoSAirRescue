@@ -1,4 +1,5 @@
 from typing import Literal
+from .map import Position, Optional
 
 AircraftAbilitySpecial = (
     Literal["Reconnoitre"]
@@ -130,6 +131,9 @@ class Aircraft:
         self.winch_person_time: float = winch_person_time
         # 单个伤患绞车上下机时间（秒）
         self.winch_patient_time: float = winch_patient_time
+
+        # 飞机当前所在位置
+        self.now_position: Optional[Position] = None
 
         # 携带的救援物资量
         self.now_supply: int = 0
