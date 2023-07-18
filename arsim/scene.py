@@ -1,4 +1,5 @@
-from typing import Optional, Unpack
+from typing import Optional, Unpack, Literal, Union
+from math import isclose
 
 from .aircraft import Aircraft
 from .map import Map, Position
@@ -6,10 +7,20 @@ from .task import SubTask, Task, TaskType, SubTaskParams
 from .examples import positions as epos
 
 
-class AircraftAlreadyHasSubTask(Exception):
+class AircraftAlreadyHasSubtask(Exception):
     def __init__(self, aircraft: Aircraft) -> None:
-        super().__init__(f"Aircraft {aircraft.name} already has a subtask")
+        super().__init__(f"航空器 {aircraft.name} 已经在执行子任务")
         self.aircraft = aircraft
+
+
+class ParallelSubtaskException(Exception):
+    def __init__(self, aircraft: Aircraft, subtask: SubTask) -> None:
+        super().__init__(f"航空器 {aircraft.name} 无法进行子任务 {subtask}")
+        self.aircraft = aircraft
+        self.subtask = subtask
+
+
+TimespanType = Literal["Move", "Subtask"]
 
 
 class Scene:
@@ -61,21 +72,91 @@ class Scene:
 
     def set_subtask(
         self,
+        aircraft: Aircraft,
+    ) -> bool:
+        """设置航空器要执行的任务
+
+        Args:
+            aircraft (Aircraft): 要设置的航空器
+
+        Raises:
+            AircraftAlreadyHasSubtask: 当前航空已经在执行子任务
+
+        Returns:
+            bool: true 表示设置成功，false 任务队列为空
+        """
+        # # 设置子任务
+        # if self.aircraft_to_subtask[aircraft] is not None:
+        #     raise AircraftAlreadyHasSubtask(aircraft)
+        # tmp_subtask = SubTask(self, s_type, aircraft, position, **addition)
+        # if not self.check_parallel_subtask(aircraft, tmp_subtask):
+        #     raise ParallelSubtaskException(aircraft, tmp_subtask)
+        # self.aircraft_to_subtask[aircraft] = tmp_subtask
+        if self.aircraft_to_subtask[aircraft] is not None:
+            raise AircraftAlreadyHasSubtask(aircraft)
+        tmp_subtask = (
+            self.aircraft_subtask_queue[aircraft][0]
+            if len(self.aircraft_subtask_queue[aircraft]) > 0
+            else None
+        )
+        if tmp_subtask is None:
+            return False
+        if (not tmp_subtask.is_fueled) and isinstance(
+            aircraft.now_position, epos.Airport
+        ):
+            tmp_subtask = SubTask(self, "加油保障", aircraft, aircraft.now_position)
+        if not self.check_parallel_subtask(aircraft, tmp_subtask):
+            raise ParallelSubtaskException(aircraft, tmp_subtask)
+        return True
+
+    def add_subtask(
+        self,
         s_type: TaskType,
         aircraft: Aircraft,
         position: Position,
         **addition: Unpack[SubTaskParams],
     ) -> None:
-        # 设置子任务
+        # 添加子任务
         if self.aircraft_to_subtask[aircraft] is not None:
-            raise AircraftAlreadyHasSubTask(aircraft)
+            raise AircraftAlreadyHasSubtask(aircraft)
         tmp_subtask = SubTask(self, s_type, aircraft, position, **addition)
-        if not self.check_parallel_subtask(aircraft, tmp_subtask):
-            raise
-        self.aircraft_to_subtask[aircraft] = tmp_subtask
+        self.aircraft_subtask_queue[aircraft].append(tmp_subtask)
 
-    def find_minuim_subtask(self) -> tuple[Aircraft, SubTask]:
-        ...
+    def find_minimum_subtask(self) -> Optional[SubTask]:
+        minimum: Optional[tuple[SubTask, float]] = None
+
+        for _, st in self.aircraft_to_subtask.items():
+            if st is not None:
+                if minimum is None:
+                    minimum = (st, st.consume_time)
+                else:
+                    if st.consume_time < minimum[1]:
+                        minimum = (st, st.consume_time)
+        if minimum is None:
+            return None
+        else:
+            return minimum[0]
+
+    def find_minimum_timespan(self) -> Optional[tuple[TimespanType, SubTask]]:
+        mimimum: Optional[tuple[TimespanType, SubTask, float]] = None
+        for ac, st in self.aircraft_to_subtask.items():
+            if st is not None:
+                if mimimum is None:
+                    # 已经到达
+                    if st.is_arrived:
+                        mimimum = ("Subtask", st, st.consume_time)
+                    else:
+                        mimimum = ("Move", st, st.move_time)
+                else:
+                    if st.is_arrived:
+                        if st.consume_time < mimimum[2]:
+                            mimimum = ("Subtask", st, st.consume_time)
+                    else:
+                        if st.move_time < mimimum[2]:
+                            mimimum = ("Move", st, st.move_time)
+        if mimimum is None:
+            return None
+        return mimimum[0], mimimum[1]
 
     def run(self) -> None:
-        task = self.find_minuim_subtask()
+        task = self.find_minimum_subtask()

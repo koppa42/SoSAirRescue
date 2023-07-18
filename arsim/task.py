@@ -1,4 +1,5 @@
 from typing import Literal, Any, TypedDict, Unpack, NotRequired, Callable, Optional
+from math import isclose
 from .scene import Scene
 from .aircraft import Aircraft
 from .map import Position
@@ -136,6 +137,8 @@ class SubTask:
         self.position: Position = position
         # 任务附加信息
         self.addition: SubTaskParams = kwargs
+        # 是否已经加油保障
+        self.is_fueled: bool = False
 
         if self.position not in self.scene.map.position:
             raise PositionNotExistException(f"地点 {self.position.name} 不存在")
@@ -150,10 +153,22 @@ class SubTask:
                 f"航空器 {self.aircraft.name} 在地点 {self.position.name} 不能执行 {self.type} 任务"
             )
 
-        if self.type != "加油保障" and isinstance(self.aircraft.now_position, mpos.Airport):
-            scene.aircraft_subtask_queue[self.aircraft].insert(
-                0, SubTask(scene, "加油保障", self.aircraft, self.aircraft.now_position)
+    def setup(self) -> None:
+        if self.aircraft.now_position is not None:
+            # 航空器移动距离
+            self.distance: float = Position.distance(
+                self.aircraft.now_position, self.position
             )
+            self.move_process: float = 0
+        else:
+            raise
+
+    @property
+    def is_arrived(self) -> bool:
+        '''
+            航空器是否移动到目的地
+        '''
+        return isclose(self.move_process, 1) and self.aircraft.now_position == self.position
 
     @property
     def consume_time(self) -> float:
@@ -161,7 +176,10 @@ class SubTask:
         任务消耗时间 (单位：秒)
         """
         if self.type == "加油保障":
-            return self.aircraft.fuel_fill_time
+            if isinstance(self.aircraft.now_position, mpos.Aircraft):
+                return self.aircraft.fuel_fill_time
+            else:
+                return 0
         elif self.type == "装载":
             return self.aircraft.supply_load_time * self.addition["load_supply"]
         elif self.type == "卸货":
@@ -203,6 +221,13 @@ class SubTask:
             return self.aircraft.search_time * (tmp.search[1] - tmp.already_search)
         else:
             raise UnsupportedSubtaskException(f"不支持的子任务类型 {self.type}")
+
+    @property
+    def move_time(self) -> float:
+        """
+        飞机移动时间 (单位：秒)
+        """
+        return self.distance * (1 - self.move_process) / self.aircraft.cruising_speed
 
     def check_aircraft_valid(self) -> bool:
         """
