@@ -8,7 +8,7 @@ class TestPosition(unittest.TestCase):
             m.Position("1", 75, 75, 0, 0, 900, 0, 0, 30, 0, 3, 0),
             m.Position("2", 12.2, 12.2, 0, 0, 900, 0, 0, 30, 0, 3, 0),
             m.Position("3", 10, 10, 0, 0, 900, 0, 0, 30, 0, 3, 0),
-            m.Position("3", 120, 10, 0, 0, 900, 0, 0, 30, 0, 3, 0)
+            m.Position("3", 120, 10, 0, 0, 900, 0, 0, 30, 0, 3, 0),
         ]
 
     def test_distance_cal(self) -> None:
@@ -38,7 +38,7 @@ class TestMap(unittest.TestCase):
             m.Position("1", 75, 75, 0, 0, 900, 0, 0, 30, 0, 3, 0),
             m.Position("2", 12.2, 12.2, 0, 0, 900, 0, 0, 30, 0, 3, 0),
             m.Position("3", 10, 10, 0, 0, 900, 0, 0, 30, 0, 3, 0),
-            m.Position("3", 120, 10, 0, 0, 900, 0, 0, 30, 0, 3, 0)
+            m.Position("3", 120, 10, 0, 0, 900, 0, 0, 30, 0, 3, 0),
         ]
         self.map = m.Map(*self.pos)
 
