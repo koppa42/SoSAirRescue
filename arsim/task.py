@@ -154,6 +154,9 @@ class SubTask:
             )
 
     def setup(self) -> None:
+        """子任务初始化
+        """
+        # 移动初始化
         if self.aircraft.now_position is not None:
             # 航空器移动距离
             self.distance: float = Position.distance(
@@ -163,64 +166,92 @@ class SubTask:
         else:
             raise
 
-    @property
-    def is_arrived(self) -> bool:
-        '''
-            航空器是否移动到目的地
-        '''
-        return isclose(self.move_process, 1) and self.aircraft.now_position == self.position
+        # 任务初始化
+        self.task_process: float = 0
 
     @property
-    def consume_time(self) -> float:
+    def is_arrived(self) -> bool:
         """
-        任务消耗时间 (单位：秒)
+        航空器是否移动到目的地
         """
+        return (
+            isclose(self.move_process, 1)
+            and self.aircraft.now_position == self.position
+        )
+
+    @property
+    def is_finished(self) -> bool:
+        """
+        航空器是否完成该子任务
+        """
+        return isclose(self.task_process, 1)
+
+    @property
+    def consume_time_raw(self) -> float:
+        """任务总共消耗时间（秒）
+
+        Raises:
+            UnsupportedSubtaskException: 不支持的子任务类型
+
+        Returns:
+            float: 需要的时间
+        """
+        c_time: float = 0
         if self.type == "加油保障":
             if isinstance(self.aircraft.now_position, mpos.Aircraft):
-                return self.aircraft.fuel_fill_time
+                c_time = self.aircraft.fuel_fill_time
             else:
-                return 0
+                c_time = 0
         elif self.type == "装载":
-            return self.aircraft.supply_load_time * self.addition["load_supply"]
+            c_time = self.aircraft.supply_load_time * self.addition["load_supply"]
         elif self.type == "卸货":
-            return self.aircraft.supply_load_time * self.aircraft.now_supply
+            c_time = self.aircraft.supply_load_time * self.aircraft.now_supply
         elif self.type == "运送":
-            return self.aircraft.person_on_off_time * self.addition["load_people"]
+            c_time = self.aircraft.person_on_off_time * self.addition["load_people"]
         elif self.type == "投放":
-            return self.aircraft.person_on_off_time * self.aircraft.now_resuce_people
+            c_time = self.aircraft.person_on_off_time * self.aircraft.now_resuce_people
         elif self.type == "绞车投放":
-            return self.aircraft.winch_person_time * self.aircraft.now_resuce_people
+            c_time = self.aircraft.winch_person_time * self.aircraft.now_resuce_people
         elif self.type == "吊运" or self.type == "卸载":
-            return self.aircraft.device_load_time
+            c_time = self.aircraft.device_load_time
         elif self.type == "转移":
-            return self.aircraft.person_on_off_time * self.addition["load_refugee"]
+            c_time = self.aircraft.person_on_off_time * self.addition["load_refugee"]
         elif self.type == "绞车转移":
-            return self.aircraft.winch_person_time * self.addition["load_refugee"]
+            c_time = self.aircraft.winch_person_time * self.addition["load_refugee"]
         elif self.type == "安置":
-            return self.aircraft.person_on_off_time * self.aircraft.now_trapped_people
+            c_time = self.aircraft.person_on_off_time * self.aircraft.now_trapped_people
         elif self.type == "转运":
-            return self.aircraft.patient_on_off_time * self.addition["load_patient"]
+            c_time = self.aircraft.patient_on_off_time * self.addition["load_patient"]
         elif self.type == "绞车转运":
-            return self.aircraft.winch_patient_time * self.addition["load_patient"]
+            c_time = self.aircraft.winch_patient_time * self.addition["load_patient"]
         elif self.type == "交接":
-            return self.aircraft.patient_on_off_time * self.aircraft.now_ill_people
+            c_time = self.aircraft.patient_on_off_time * self.aircraft.now_ill_people
         elif self.type == "取水":
-            return (
+            c_time = (
                 self.aircraft.water_load_time
                 / self.aircraft.max_external_load
                 * self.addition["load_water"]
             )
         elif self.type == "灭火":
-            return (
+            c_time = (
                 self.aircraft.extinguishing_time
                 / self.aircraft.max_external_load
                 * self.aircraft.now_water
             )
         elif self.type == "侦查搜寻":
             tmp: mpos.DisasterArea = self.position  # type: ignore
-            return self.aircraft.search_time * (tmp.search[1] - tmp.already_search)
+            c_time = self.aircraft.search_time * (tmp.search[1] - tmp.already_search)
         else:
             raise UnsupportedSubtaskException(f"不支持的子任务类型 {self.type}")
+        return c_time
+
+    @property
+    def consume_time(self) -> float:
+        """
+        任务还需要进行的时间 (单位：秒)
+        """
+
+        return self.consume_time_raw * (1 - self.task_process)
 
     @property
     def move_time(self) -> float:
@@ -509,6 +540,51 @@ class SubTask:
                 )
 
         return True
+
+    def on_finish(self) -> None:
+        if self.type == "加油保障":
+            self.aircraft.current_fuel = self.aircraft.max_fuel
+        elif self.type == "装载":
+            self.aircraft.now_supply = self.addition["load_supply"]
+            self.position.supply -= self.addition["load_supply"]
+        elif self.type == "卸货":
+            self.position.supply += self.aircraft.now_supply
+            self.aircraft.now_supply = 0
+        elif self.type == "运送":
+            self.aircraft.now_resuce_people += self.addition["load_people"]
+            self.position.rescue_people -= self.addition["load_people"]
+        elif self.type == "投放" or self.type == "绞车投放":
+            self.position.rescue_people += self.aircraft.now_resuce_people
+            self.aircraft.now_resuce_people = 0
+        elif self.type == "吊运":
+            self.aircraft.now_device = self.addition["load_device"]
+            self.position.device -= self.addition["load_device"]
+        elif self.type == "卸载":
+            self.position.device += self.aircraft.now_device
+            self.aircraft.now_device = 0
+        elif self.type == "转移" or self.type == "绞车转移":
+            self.aircraft.now_trapped_people += self.addition["load_refugee"]
+            self.position.trapped_people -= self.addition["load_refugee"]
+        elif self.type == "安置":
+            self.position.trapped_people += self.aircraft.now_trapped_people
+            self.aircraft.now_trapped_people = 0
+        elif self.type == "转运" or self.type == "绞车转运":
+            self.aircraft.now_ill_people += self.addition["load_patient"]
+            self.position.patient -= self.addition["load_patient"]
+        elif self.type == "交接":
+            self.position.patient += self.aircraft.now_ill_people
+            self.aircraft.now_ill_people = 0
+        elif self.type == "取水":
+            self.aircraft.now_water += self.addition["load_water"]
+            self.position.water -= self.addition["load_water"]
+        elif self.type == "灭火":
+            self.position.water += self.aircraft.now_water
+            self.aircraft.now_water = 0
+        elif self.type == "侦查搜寻":
+            tmp: mpos.DisasterArea = self.position  # type: ignore
+            tmp.already_search = tmp.search[1]
+        else:
+            raise UnsupportedSubtaskException(f"不支持的子任务类型 {self.type}")
 
 
 def _attach_fset_侦查(self: mpos.DisasterArea, value: float, task: "Task") -> None:

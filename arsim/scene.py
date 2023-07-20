@@ -24,11 +24,13 @@ TimespanType = Literal["Move", "Subtask"]
 
 
 class Scene:
+    MAX_RESCUE_TIME: float = 3600 * 24 * 3
+
     def __init__(self, aircrafts: list[Aircraft], map: Map, tasks: list[Task]) -> None:
         self.aircrafts: list[Aircraft] = aircrafts
         self.map: Map = map
         self.tasks: list[Task] = tasks
-        self.now: int = 0
+        self.now_time: float = 0
 
         self.aircraft_to_subtask: dict[Aircraft, Optional[SubTask]] = {}
         self.aircraft_subtask_queue: dict[Aircraft, list[SubTask]] = {}
@@ -68,6 +70,17 @@ class Scene:
             if sum_area > subtask.position.air_work_area:
                 return False
 
+        return True
+
+    def is_subtask_queue_empty(self) -> bool:
+        """子任务队列是否为空
+
+        Returns:
+            bool: 是否为空
+        """
+        for _, v in self.aircraft_subtask_queue.items():
+            if len(v) != 0:
+                return False
         return True
 
     def set_subtask(
@@ -139,7 +152,7 @@ class Scene:
 
     def find_minimum_timespan(self) -> Optional[tuple[TimespanType, SubTask]]:
         mimimum: Optional[tuple[TimespanType, SubTask, float]] = None
-        for ac, st in self.aircraft_to_subtask.items():
+        for _, st in self.aircraft_to_subtask.items():
             if st is not None:
                 if mimimum is None:
                     # 已经到达
@@ -158,5 +171,68 @@ class Scene:
             return None
         return mimimum[0], mimimum[1]
 
+    def update_subtask_time(self, time: float, ex: SubTask) -> None:
+        if not ex.is_arrived:
+            ex.move_process += time * ex.aircraft.cruising_speed / ex.distance
+            if ex.is_arrived:
+                ex.aircraft.now_position = ex.position
+        else:
+            ex.task_process += time / ex.consume_time_raw
+            if ex.is_finished:
+                ex.on_finish()
+
     def run(self) -> None:
-        task = self.find_minimum_subtask()
+        while (
+            self.now_time <= Scene.MAX_RESCUE_TIME and not self.is_subtask_queue_empty()
+        ):
+            # 得到最小时间片
+            minimum = self.find_minimum_timespan()
+            if minimum is None:
+                raise RuntimeError("无法找到最小时间片")
+
+            # 获取时间片需要时间，并完成该最小时间片
+            minimum_consume_time: float = 0
+            if minimum[0] == "Move":
+                minimum_consume_time = minimum[1].move_time
+                minimum[1].move_process = 1
+                minimum[1].aircraft.now_position = minimum[1].position
+            elif minimum[0] == "Subtask":
+                minimum_consume_time = minimum[1].consume_time
+                minimum[1].task_process = 1
+                minimum[1].on_finish()
+
+            # 更新时间，
+            self.now_time += minimum_consume_time
+            # 完成其他子任务
+            for st in self.aircraft_to_subtask.values():
+                if st is not None and st is not minimum[1]:
+                    self.update_subtask_time(minimum_consume_time, st)
+
+            # 去除完成的子任务，设置新的子任务
+            for ac in self.aircraft_to_subtask:
+                now_st = self.aircraft_to_subtask[ac]
+                if now_st is None:
+                    continue
+                if now_st.is_finished:
+                    # 判断下一个进行的子任务是否需要加油
+                    next_st = (
+                        self.aircraft_subtask_queue[ac][0]
+                        if len(self.aircraft_subtask_queue[ac]) > 0
+                        else None
+                    )
+                    if next_st is None:
+                        self.aircraft_to_subtask[ac] = None
+                        continue
+                    if isinstance(ac.now_position, epos.Airport) and (not next_st.is_fueled):
+                        # 需要加油
+                        tmp_st = SubTask(self, "加油保障", ac, ac.now_position)
+                        tmp_st.setup()
+                        self.aircraft_to_subtask[ac] = tmp_st
+                        next_st.is_fueled = True
+                    else:
+                        tmp_st = self.aircraft_subtask_queue[ac].pop(0)
+                        tmp_st.setup()
+                        self.aircraft_to_subtask[ac] = tmp_st
+                    
+
+                    
