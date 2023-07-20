@@ -1,5 +1,4 @@
-from typing import Literal
-from .map import Position, Optional
+from typing import Literal, Optional
 
 AircraftAbilitySpecial = (
     Literal["Reconnoitre"]
@@ -85,6 +84,8 @@ class Aircraft:
         a_type: AircraftType = "Helicopter",
         current_fuel: float = 0,
     ) -> None:
+        from .map import Position
+
         # 飞机属性
         self.name: str = name
         # 飞机价格（亿元）
