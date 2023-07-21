@@ -30,3 +30,22 @@ class SoSData:
         """
         ...
 ```
+
+提供的 api 有
+```python
+def add_task(
+    self, 
+    t_type: TaskType, 
+    position: DisasterArea, 
+    /, 
+    on_finished: Optional[Callable[['Scene', "Task"], None]]=None
+) -> None:
+
+def add_subtask(
+    self, 
+    task_type: TaskType, 
+    aircraft: Aircraft, 
+    position: Position, 
+    **kwargs: Unpack[SubTaskParams]
+) -> None:
+```

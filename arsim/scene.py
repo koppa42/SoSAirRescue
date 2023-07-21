@@ -261,3 +261,4 @@ class Scene:
                         tmp_st.setup()
                         self.aircraft_to_subtask[ac] = tmp_st
                         logger.info(f'[{self.now_time}] 航空器 {ac.name} 开始执行 {tmp_st.type} 任务')
+        logger.info(f"场景运行结束，总共用时 {self.now_time}")
