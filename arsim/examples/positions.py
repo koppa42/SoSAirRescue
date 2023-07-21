@@ -145,3 +145,63 @@ class NormalArea(Position):
             water,
             special_condition=special_condition,
         )
+
+class Source(Position):
+    def __init__(
+        self,
+        name: str,
+        longitude: float,
+        latitude: float,
+        helicopter_area: float,
+        fixed_area: float,
+        air_work_area: float,
+        supply: int,
+        rescue_people: int,
+        device: int,
+        water: int,
+        /,
+        special_condition: Optional[Callable[["Position", Aircraft], bool]] = None,
+    ) -> None:
+        super().__init__(
+            name,
+            longitude,
+            latitude,
+            helicopter_area,
+            fixed_area,
+            air_work_area,
+            supply,
+            rescue_people,
+            0,
+            device,
+            0,
+            water,
+            special_condition=special_condition,
+        )
+
+class Destination(Position):
+    def __init__(
+        self,
+        name: str,
+        longitude: float,
+        latitude: float,
+        helicopter_area: float,
+        fixed_area: float,
+        air_work_area: float,
+        /,
+        special_condition: Optional[Callable[["Position", Aircraft], bool]] = None,
+    ) -> None:
+        super().__init__(
+            name,
+            longitude,
+            latitude,
+            helicopter_area,
+            fixed_area,
+            air_work_area,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            special_condition=special_condition,
+        )
