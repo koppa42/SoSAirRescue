@@ -142,14 +142,17 @@ class SubTask:
         self.is_fueled: bool = False
 
         if self.position not in self.scene.map.position:
+            logger.error(f"地点 {self.position.name} 不存在")
             raise PositionNotExistException(f"地点 {self.position.name} 不存在")
 
         if not self.check_aircraft_valid():
+            logger.error(f"航空器 {self.aircraft.name} 不能执行 {self.type} 任务")
             raise UnsupportedSubtaskException(
                 f"航空器 {self.aircraft.name} 不能执行 {self.type} 任务"
             )
 
         if not self.check_position_valid():
+            logger.error(f"航空器 {self.aircraft.name} 在地点 {self.position.name} 不能执行 {self.type} 任务")
             raise UnsupportedSubtaskException(
                 f"航空器 {self.aircraft.name} 在地点 {self.position.name} 不能执行 {self.type} 任务"
             )
@@ -165,6 +168,7 @@ class SubTask:
             )
             self.move_process: float = 0
         else:
+            logger.error("子任务初始化失败，航空器当前位置为空")
             raise
 
         # 任务初始化
@@ -243,6 +247,7 @@ class SubTask:
             tmp: mpos.DisasterArea = self.position  # type: ignore
             c_time = self.aircraft.search_time * (tmp.search[1] - tmp.already_search)
         else:
+            logger.error(f"不支持的子任务类型 {self.type}")
             raise UnsupportedSubtaskException(f"不支持的子任务类型 {self.type}")
         return c_time
 
@@ -274,6 +279,7 @@ class SubTask:
             if not self.aircraft.ability.can("Fire"):
                 return False
             if "load_water" not in self.addition:
+                logger.error(f"航空器 {self.aircraft.name} 执行 {self.type} 任务时缺少 load_water 信息")
                 raise MissingSubtaskInformationException(
                     f"航空器 {self.aircraft.name} 执行 {self.type} 任务时缺少 load_water 信息"
                 )
@@ -281,6 +287,7 @@ class SubTask:
                 self.addition["load_water"] + self.aircraft.now_external
                 > self.aircraft.max_external_load
             ):
+                logger.error(f'航空器 {self.aircraft.name} 无法取水 {self.addition["load_water"]} 吨')
                 raise UnsupportedSubtaskException(
                     f'航空器 {self.aircraft.name} 无法取水 {self.addition["load_water"]} 吨'
                 )
@@ -288,12 +295,14 @@ class SubTask:
             if not self.aircraft.ability.can("Fire"):
                 return False
             if self.aircraft.now_water <= 0:
+                logger.error(f"航空器 {self.aircraft.name} 上没有多余的水")
                 raise UnsupportedSubtaskException(f"航空器 {self.aircraft.name} 上没有多余的水")
         # 货运
         elif self.type == "装载":
             if not self.aircraft.ability.can("Freight"):
                 return False
             if "load_supply" not in self.addition:
+                logger.error(f"航空器 {self.aircraft.name} 执行 {self.type} 任务时缺少 load_supply 信息")
                 raise MissingSubtaskInformationException(
                     f"航空器 {self.aircraft.name} 执行 {self.type} 任务时缺少 load_supply 信息"
                 )
@@ -301,6 +310,7 @@ class SubTask:
                 self.addition["load_supply"] + self.aircraft.now_internal
                 > self.aircraft.max_internal_load
             ):
+                logger.error(f'航空器 {self.aircraft.name} 无法装载救援物资 {self.addition["load_supply"]} 千克')
                 raise UnsupportedSubtaskException(
                     f'航空器 {self.aircraft.name} 无法装载救援物资 {self.addition["load_supply"]} 千克'
                 )
@@ -308,12 +318,14 @@ class SubTask:
             if not self.aircraft.ability.can("Freight"):
                 return False
             if self.aircraft.now_supply <= 0:
+                logger.error(f"航空器 {self.aircraft.name} 上没有装载的物资")
                 raise UnsupportedSubtaskException(f"航空器 {self.aircraft.name} 上没有装载的物资")
         # 载人
         elif self.type == "运送":
             if not self.aircraft.ability.can("Manned"):
                 return False
             if "load_people" not in self.addition:
+                logger.error(f"航空器 {self.aircraft.name} 执行 {self.type} 任务时缺少 load_people 信息")
                 raise MissingSubtaskInformationException(
                     f"航空器 {self.aircraft.name} 执行 {self.type} 任务时缺少 load_people 信息"
                 )
@@ -321,6 +333,7 @@ class SubTask:
                 self.aircraft.now_people + self.addition["load_people"]
                 > self.aircraft.max_capacity
             ):
+                logger.error(f'航空器 {self.aircraft.name} 无法运送人员 {self.addition["load_people"]} 人')
                 raise UnsupportedSubtaskException(
                     f'航空器 {self.aircraft.name} 无法运送人员 {self.addition["load_people"]} 人'
                 )
@@ -328,17 +341,20 @@ class SubTask:
             if not self.aircraft.ability.can("Manned"):
                 return False
             if self.aircraft.now_resuce_people <= 0:
+                logger.error(f"航空器 {self.aircraft.name} 上没有救援人员")
                 raise UnsupportedSubtaskException(f"航空器 {self.aircraft.name} 上没有救援人员")
         elif self.type == "绞车投放":
             if not self.aircraft.ability.can("Manned", "Winch"):
                 return False
             if self.aircraft.now_resuce_people <= 0:
+                logger.error(f"航空器 {self.aircraft.name} 上没有救援人员")
                 raise UnsupportedSubtaskException(f"航空器 {self.aircraft.name} 上没有救援人员")
         # 吊挂
         elif self.type == "吊运":
             if not self.aircraft.ability.can("Hanging"):
                 return False
             if self.aircraft.now_external + 10_000 > self.aircraft.max_external_load:
+                logger.error(f"航空器 {self.aircraft.name} 无法吊运 10 吨的设备")
                 raise UnsupportedSubtaskException(
                     f"航空器 {self.aircraft.name} 无法吊运 10 吨的设备"
                 )
@@ -346,12 +362,14 @@ class SubTask:
             if not self.aircraft.ability.can("Hanging"):
                 return False
             if self.aircraft.now_device <= 0:
+                logger.error(f"航空器 {self.aircraft.name} 上没有吊运的设备")
                 raise UnsupportedSubtaskException(f"航空器 {self.aircraft.name} 上没有吊运的设备")
         # 转移灾民
         elif self.type == "转移":
             if not self.aircraft.ability.can("Manned"):
                 return False
             if "load_refugee" not in self.addition:
+                logger.error(f"航空器 {self.aircraft.name} 执行 {self.type} 任务时缺少 load_refugee 信息")
                 raise MissingSubtaskInformationException(
                     f"航空器 {self.aircraft.name} 执行 {self.type} 任务时缺少 load_refugee 信息"
                 )
@@ -359,6 +377,7 @@ class SubTask:
                 self.addition["load_refugee"] + self.aircraft.now_people
                 > self.aircraft.max_capacity
             ):
+                logger.error(f'航空器 {self.aircraft.name} 无法转运灾民 {self.addition["load_refugee"]} 人')
                 raise UnsupportedSubtaskException(
                     f'航空器 {self.aircraft.name} 无法转运灾民 {self.addition["load_refugee"]} 人'
                 )
@@ -366,6 +385,7 @@ class SubTask:
             if not self.aircraft.ability.can("Manned", "Winch"):
                 return False
             if "load_refugee" not in self.addition:
+                logger.error(f"航空器 {self.aircraft.name} 执行 {self.type} 任务时缺少 load_refugee 信息")
                 raise MissingSubtaskInformationException(
                     f"航空器 {self.aircraft.name} 执行 {self.type} 任务时缺少 load_refugee 信息"
                 )
@@ -373,6 +393,7 @@ class SubTask:
                 self.addition["load_refugee"] + self.aircraft.now_people
                 > self.aircraft.max_capacity
             ):
+                logger.error(f'航空器 {self.aircraft.name} 无法转移灾民 {self.addition["load_refugee"]} 人')
                 raise UnsupportedSubtaskException(
                     f'航空器 {self.aircraft.name} 无法转移灾民 {self.addition["load_refugee"]} 人'
                 )
@@ -380,12 +401,14 @@ class SubTask:
             if not self.aircraft.ability.can("Manned"):
                 return False
             if self.aircraft.now_trapped_people <= 0:
+                logger.error(f"航空器 {self.aircraft.name} 上没有要安置的灾民")
                 raise UnsupportedSubtaskException(f"航空器 {self.aircraft.name} 上没有要转移的灾民")
         # 转运伤患
         elif self.type == "转运":
             if not self.aircraft.ability.can("Manned", "Medical"):
                 return False
             if "load_patient" not in self.addition:
+                logger.error(f"航空器 {self.aircraft.name} 执行 {self.type} 任务时缺少 load_patient 信息")
                 raise MissingSubtaskInformationException(
                     f"航空器 {self.aircraft.name} 执行 {self.type} 任务时缺少 load_patient 信息"
                 )
@@ -393,6 +416,7 @@ class SubTask:
                 self.addition["load_patient"] + self.aircraft.now_people
                 > self.aircraft.max_capacity
             ):
+                logger.error(f'航空器 {self.aircraft.name} 无法转运伤患 {self.addition["load_patient"]} 人')
                 raise UnsupportedSubtaskException(
                     f'航空器 {self.aircraft.name} 无法转运伤患 {self.addition["load_patient"]} 人'
                 )
@@ -400,6 +424,7 @@ class SubTask:
             if not self.aircraft.ability.can("Manned", "Winch", "Medical"):
                 return False
             if "load_patient" not in self.addition:
+                logger.error(f"航空器 {self.aircraft.name} 执行 {self.type} 任务时缺少 load_patient 信息")
                 raise MissingSubtaskInformationException(
                     f"航空器 {self.aircraft.name} 执行 {self.type} 任务时缺少 load_patient 信息"
                 )
@@ -407,6 +432,7 @@ class SubTask:
                 self.addition["load_patient"] + self.aircraft.now_people
                 > self.aircraft.max_capacity
             ):
+                logger.error(f'航空器 {self.aircraft.name} 无法转运伤患 {self.addition["load_patient"]} 人')
                 raise UnsupportedSubtaskException(
                     f'航空器 {self.aircraft.name} 无法转运灾民 {self.addition["load_patient"]} 人'
                 )
@@ -414,7 +440,8 @@ class SubTask:
             if not self.aircraft.ability.can("Manned", "Medical"):
                 return False
             if self.aircraft.now_ill_people <= 0:
-                raise UnsupportedSubtaskException(f"航空器 {self.aircraft.name} 上没有要交接的灾民")
+                logger.error(f"航空器 {self.aircraft.name} 上没有要交接的伤患")
+                raise UnsupportedSubtaskException(f"航空器 {self.aircraft.name} 上没有要交接的伤患")
         elif self.type == "加油保障":
             pass
 
@@ -431,16 +458,19 @@ class SubTask:
         if self.type in SubTask._LAND_SUBTASK:
             if self.aircraft.type == "Helicopter":
                 if self.aircraft.rotor_area > self.position.helicopter_area:
+                    logger.error(f"地点 {self.position.name} 的空间不支持航空器 {self.aircraft.name} 起降")
                     raise PositionNotSupportedException(
                         f"地点 {self.position.name} 的空间不支持航空器 {self.aircraft.name} 起降"
                     )
             elif self.aircraft.type == "FixedWing":
                 if self.aircraft.rotor_area > self.position.fixed_area:
+                    logger.error(f"地点 {self.position.name} 的空间不支持航空器 {self.aircraft.name} 起降")
                     raise PositionNotSupportedException(
                         f"地点 {self.position.name} 的空间不支持航空器 {self.aircraft.name} 起降"
                     )
         elif self.type in SubTask._AIR_SUBTASK:
             if self.aircraft.air_area > self.position.air_work_area:
+                logger.error(f"地点 {self.position.name} 的空间不支持航空器 {self.aircraft.name} 空中作业")
                 raise PositionNotSupportedException(
                     f"地点 {self.position.name} 的空间不支持航空器 {self.aircraft.name} 空中作业"
                 )
@@ -450,85 +480,109 @@ class SubTask:
                 not isinstance(self.position, mpos.DisasterArea)
                 or not self.position.search[0]
             ):
+                logger.error(f"地点 {self.position.name} 不需要侦查搜寻")
                 raise PositionNotSupportedException(f"地点 {self.position.name} 不需要侦查搜寻")
         # 消防
         elif self.type == "取水":
             if not isinstance(self.position, mpos.NormalArea):
+                logger.error(f"不能从地点 {self.position.name} 取水")
                 raise PositionNotSupportedException(f"不能从地点 {self.position.name} 取水")
             if self.position.water < self.addition["load_water"]:
+                logger.error(f'地点 {self.position.name} 没有 {self.addition["load_water"]} 吨水')
                 raise PositionNotSupportedException(
                     f'地点 {self.position.name} 没有 {self.addition["load_water"]} 吨水'
                 )
         elif self.type == "灭火":
             if not isinstance(self.position, mpos.DisasterArea):
+                logger.error(f"地点 {self.position.name} 不需要水源灭火")
                 raise PositionNotSupportedException(f"地点 {self.position.name} 不需要水源灭火")
             if self.position.water >= self.position.need_water:
+                logger.error(f"地点 {self.position.name} 的灭火任务已经完成")
                 raise SubTaskSucceedException(f"地点 {self.position.name} 的灭火任务已经完成")
         # 货运
         elif self.type == "装载":
             if not isinstance(self.position, mpos.NormalArea):
+                logger.error(f"不能从地点 {self.position.name} 装载物资")
                 raise PositionNotSupportedException(f"不能从地点 {self.position.name} 装载物资")
             if self.position.supply < self.addition["load_supply"]:
+                logger.error(f'地点 {self.position.name} 没有 {self.addition["load_supply"]} 千克物资')
                 raise PositionNotSupportedException(
                     f'地点 {self.position.name} 没有 {self.addition["load_supply"]} 千克物资'
                 )
         elif self.type == "卸货":
             if not isinstance(self.position, mpos.DisasterArea):
+                logger.error(f"地点 {self.position.name} 不需要卸载物资")
                 raise PositionNotSupportedException(f"地点 {self.position.name} 不需要卸载物资")
             if self.position.supply >= self.position.need_supply:
+                logger.error(f"地点 {self.position.name} 的物资任务已经完成")
                 raise SubTaskSucceedException(f"地点 {self.position.name} 的物资任务已经完成")
         # 载人
         elif self.type == "运送":
             if not isinstance(self.position, mpos.NormalArea):
+                logger.error(f"不能从地点 {self.position.name} 运送人员")
                 raise PositionNotSupportedException(f"不能从地点 {self.position.name} 运送人员")
             if self.position.rescue_people < self.addition["load_people"]:
+                logger.error(f'地点 {self.position.name} 没有 {self.addition["load_people"]} 个人员')
                 raise PositionNotSupportedException(
                     f'地点 {self.position.name} 没有 {self.addition["load_people"]} 个人员'
                 )
         elif self.type == "投放" or self.type == "绞车投放":
             if not isinstance(self.position, mpos.DisasterArea):
+                logger.error(f"地点 {self.position.name} 不需要投放救援人员")
                 raise PositionNotSupportedException(
                     f"地点 {self.position.name} 不需要投放救援人员"
                 )
             if self.position.rescue_people >= self.position.need_rescue_people:
+                logger.error(f"地点 {self.position.name} 的投放人员任务已经完成")
                 raise SubTaskSucceedException(f"地点 {self.position.name} 的投放人员任务已经完成")
         # 吊挂
         elif self.type == "吊运":
             if not isinstance(self.position, mpos.NormalArea):
+                logger.error(f"不能从地点 {self.position.name} 吊运设备")
                 raise PositionNotSupportedException(f"不能从地点 {self.position.name} 吊运设备")
             if self.position.device < self.addition["load_device"]:
+                logger.error(f'地点 {self.position.name} 没有 {self.addition["load_device"]} 个设备')
                 raise PositionNotSupportedException(
                     f'地点 {self.position.name} 没有 {self.addition["load_device"]} 个设备'
                 )
         elif self.type == "卸载":
             if not isinstance(self.position, mpos.DisasterArea):
+                logger.error(f"地点 {self.position.name} 不需要卸载设备")
                 raise PositionNotSupportedException(f"地点 {self.position.name} 不需要卸载设备")
             if self.position.device >= self.position.need_device:
+                logger.error(f"地点 {self.position.name} 的卸载设备任务已经完成")
                 raise SubTaskSucceedException(f"地点 {self.position.name} 的卸载设备任务已经完成")
         # 转移灾民
         elif self.type == "转移" or self.type == "绞车转移":
             if not isinstance(self.position, mpos.DisasterArea):
+                logger.error(f"不能从地点 {self.position.name} 转移灾民")
                 raise PositionNotSupportedException(f"不能从地点 {self.position.name} 转移灾民")
             if self.position.trapped_people < self.addition["load_refugee"]:
+                logger.error(f'地点 {self.position.name} 没有 {self.addition["load_refugee"]} 个灾民')
                 raise PositionNotSupportedException(
                     f'地点 {self.position.name} 没有 {self.addition["load_refugee"]} 个灾民'
                 )
         elif self.type == "安置":
             if not isinstance(self.position, mpos.NormalArea):
+                logger.error(f"地点 {self.position.name} 不需要安置灾民")
                 raise PositionNotSupportedException(f"地点 {self.position.name} 不能接受灾民")
         # 转运伤患
         elif self.type == "转运" or self.type == "绞车转运":
             if not isinstance(self.position, mpos.DisasterArea):
+                logger.error(f"不能从地点 {self.position.name} 转运患者")
                 raise PositionNotSupportedException(f"不能从地点 {self.position.name} 转运患者")
             if self.position.patient < self.addition["load_patient"]:
+                logger.error(f'地点 {self.position.name} 没有 {self.addition["load_patient"]} 个伤患')
                 raise PositionNotSupportedException(
                     f'地点 {self.position.name} 没有 {self.addition["load_patient"]} 个伤患'
                 )
         elif self.type == "交接":
             if not isinstance(self.position, mpos.Hospital):
+                logger.error(f"地点 {self.position.name} 不需要交接伤患")
                 raise PositionNotSupportedException(f"地点 {self.position.name} 不能接受伤患")
         elif self.type == "加油保障":
             if not isinstance(self.position, mpos.Airport):
+                logger.error(f"地点 {self.position.name} 不能进行加油保障")
                 raise PositionNotSupportedException(
                     f"所选择的地点 {self.position.name} 不能进行加油保障"
                 )
@@ -536,6 +590,7 @@ class SubTask:
         # 特殊要求
         if self.position.special_condition is not None:
             if not self.position.special_condition(self.position, self.aircraft):
+                logger.error(f"地点 {self.position.name} 的特殊需求未满足")
                 raise SpecialConditionNotSatisfiedException(
                     f"地点 {self.position.name} 的特殊需求未满足"
                 )
@@ -585,6 +640,7 @@ class SubTask:
             tmp: mpos.DisasterArea = self.position  # type: ignore
             tmp.already_search = tmp.search[1]
         else:
+            logger.error(f"不支持的子任务类型 {self.type}")
             raise UnsupportedSubtaskException(f"不支持的子任务类型 {self.type}")
 
 
@@ -751,4 +807,5 @@ class Task:
                 ),
             )
         elif self.type in ["取水", "加油保障", "装载", "运送", "吊运", "安置", "交接"]:
+            logger.error(f"类型 {self.type} 不能作为任务")
             raise NotSupportedTaskException(f"类型 {self.type} 不能作为任务")

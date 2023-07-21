@@ -109,6 +109,7 @@ class Scene:
         #     raise ParallelSubtaskException(aircraft, tmp_subtask)
         # self.aircraft_to_subtask[aircraft] = tmp_subtask
         if self.aircraft_to_subtask[aircraft] is not None:
+            logger.error(f"航空器 {aircraft.name} 已经在执行子任务")
             raise AircraftAlreadyHasSubtask(aircraft)
         tmp_subtask = (
             self.aircraft_subtask_queue[aircraft][0]
@@ -122,6 +123,7 @@ class Scene:
         ):
             tmp_subtask = SubTask(self, "加油保障", aircraft, aircraft.now_position)
         if not self.check_parallel_subtask(aircraft, tmp_subtask):
+            logger.error(f"航空器 {aircraft.name} 无法进行子任务 {tmp_subtask}")
             raise ParallelSubtaskException(aircraft, tmp_subtask)
         return True
 
@@ -134,6 +136,7 @@ class Scene:
     ) -> None:
         # 添加子任务
         if self.aircraft_to_subtask[aircraft] is not None:
+            logger.error(f"航空器 {aircraft.name} 已经在执行子任务")
             raise AircraftAlreadyHasSubtask(aircraft)
         tmp_subtask = SubTask(self, s_type, aircraft, position, **addition)
         self.aircraft_subtask_queue[aircraft].append(tmp_subtask)
@@ -210,6 +213,7 @@ class Scene:
                 minimum_consume_time = minimum[1].consume_time
                 minimum[1].task_process = 1
                 minimum[1].on_finish()
+                logger.info(f'[{self.now_time}] 航空器 {minimum[1].aircraft.name} 完成 {minimum[1].type} 任务')
 
             # 更新时间，
             self.now_time += minimum_consume_time
