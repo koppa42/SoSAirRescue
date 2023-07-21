@@ -1,6 +1,7 @@
 from importlib import util
 from os import path
 import sys
+from ..utils.logger import logger
 
 
 class Module:
@@ -19,6 +20,7 @@ class Module:
         # 获取模块名称
         absolute_path = path.abspath(file_path)
         if not path.exists(absolute_path):
+            logger.error(f"文件 {absolute_path} 不存在")
             raise FileNotFoundError(f"文件 {absolute_path} 不存在")
         module_name = path.splitext(path.basename(absolute_path))[0]
 
@@ -28,14 +30,17 @@ class Module:
 
         spec = util.spec_from_file_location(module_name, absolute_path)
         if spec is None:
+            logger.error(f"文件 {absolute_path} 不存在")
             raise FileNotFoundError(f"文件 {absolute_path} 不存在")
 
         module = util.module_from_spec(spec)
         if spec.loader is None:
+            logger.error(f"文件 {absolute_path} 不存在")
             raise FileNotFoundError(f"文件 {absolute_path} 不存在")
 
         spec.loader.exec_module(module)
         self.module = module
+        logger.info(f'成功导入模块 {module_name}')
 
         from ..api import SoSAPI
 
@@ -43,6 +48,7 @@ class Module:
         for cls in self.module.__dict__.values():
             if type(cls) == type and cls.__name__.startswith("SoS") :
                 cls.api = SoSAPI()  # type: ignore [reportGeneralTypeIssues, attr-defined]
+        logger.info(f"成功向模块注入 API")
 
     @staticmethod
     def from_file(file_path: str) -> "Module":

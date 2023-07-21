@@ -1,6 +1,7 @@
 from typing import Callable, Optional
 from ..map import Position, PositionType
 from ..aircraft import Aircraft
+from ..utils.logger import logger
 
 
 class Airport(Position):
@@ -29,6 +30,8 @@ class Airport(Position):
             0,
             special_condition=special_condition,
         )
+
+        logger.info(f"创建机场 {name}")
 
 
 class DisasterArea(Position):
@@ -75,6 +78,8 @@ class DisasterArea(Position):
         self.search: tuple[bool, float] = search
         self.already_search: float = 0
 
+        logger.info(f"创建灾区 {name}")
+
     @property
     def need_search(self) -> bool:
         return self.search[0]
@@ -111,6 +116,8 @@ class Hospital(Position):
             special_condition=special_condition,
         )
 
+        logger.info(f"创建医院 {name}")
+
 
 class NormalArea(Position):
     def __init__(
@@ -146,6 +153,9 @@ class NormalArea(Position):
             special_condition=special_condition,
         )
 
+        logger.info(f"创建地点 {name}")
+
+
 class Source(Position):
     def __init__(
         self,
@@ -178,6 +188,9 @@ class Source(Position):
             special_condition=special_condition,
         )
 
+        logger.info(f"创建地点 {name}")
+
+
 class Destination(Position):
     def __init__(
         self,
@@ -205,3 +218,5 @@ class Destination(Position):
             0,
             special_condition=special_condition,
         )
+
+        logger.info(f"创建地点 {name}")
