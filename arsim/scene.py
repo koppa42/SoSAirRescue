@@ -5,6 +5,7 @@ from .aircraft import Aircraft
 from .map import Map, Position
 from .task import SubTask, Task, TaskType, SubTaskParams
 from .examples import positions as epos
+from .utils.logger import logger
 
 
 class AircraftAlreadyHasSubtask(Exception):
@@ -45,6 +46,8 @@ class Scene:
         # 航空器子任务队列
         for ac in self.aircrafts:
             self.aircraft_subtask_queue[ac] = []
+
+        logger.info("成功建立任务执行环境")
 
     def check_parallel_subtask(self, aircraft: Aircraft, subtask: SubTask) -> bool:
         # 获取在同一地点执行任务的航空器
@@ -135,6 +138,8 @@ class Scene:
         tmp_subtask = SubTask(self, s_type, aircraft, position, **addition)
         self.aircraft_subtask_queue[aircraft].append(tmp_subtask)
 
+        logger.info(f"航空器 {aircraft.name} 添加子任务 {tmp_subtask.type}")
+
     def find_minimum_subtask(self) -> Optional[SubTask]:
         minimum: Optional[tuple[SubTask, float]] = None
 
@@ -169,6 +174,8 @@ class Scene:
                             mimimum = ("Move", st, st.move_time)
         if mimimum is None:
             return None
+
+        logger.info(f"找到 {mimimum[0]} 最小时间片 {mimimum[1].type}, 用时 {mimimum[2]}")
         return mimimum[0], mimimum[1]
 
     def update_subtask_time(self, time: float, ex: SubTask) -> None:
@@ -176,10 +183,12 @@ class Scene:
             ex.move_process += time * ex.aircraft.cruising_speed / ex.distance
             if ex.is_arrived:
                 ex.aircraft.now_position = ex.position
+                logger.info(f'[{self.now_time}] 航空器 {ex.aircraft.name} 到达地点 {ex.position.name}')
         else:
             ex.task_process += time / ex.consume_time_raw
             if ex.is_finished:
                 ex.on_finish()
+                logger.info(f'[{self.now_time}] 航空器 {ex.aircraft.name} 完成 {ex.type} 任务')
 
     def run(self) -> None:
         while (
@@ -188,6 +197,7 @@ class Scene:
             # 得到最小时间片
             minimum = self.find_minimum_timespan()
             if minimum is None:
+                logger.error("无法找到最小时间片")
                 raise RuntimeError("无法找到最小时间片")
 
             # 获取时间片需要时间，并完成该最小时间片
@@ -223,7 +233,9 @@ class Scene:
                     if next_st is None:
                         self.aircraft_to_subtask[ac] = None
                         continue
-                    if isinstance(ac.now_position, epos.Airport) and (not next_st.is_fueled):
+                    if isinstance(ac.now_position, epos.Airport) and (
+                        not next_st.is_fueled
+                    ):
                         # 需要加油
                         tmp_st = SubTask(self, "加油保障", ac, ac.now_position)
                         tmp_st.setup()
@@ -233,6 +245,4 @@ class Scene:
                         tmp_st = self.aircraft_subtask_queue[ac].pop(0)
                         tmp_st.setup()
                         self.aircraft_to_subtask[ac] = tmp_st
-                    
-
-                    
+                        logger.info(f'[{self.now_time}] 航空器 {ac.name} 开始执行 {tmp_st.type} 任务')

@@ -4,6 +4,7 @@ from .scene import Scene
 from .aircraft import Aircraft
 from .map import Position
 from .examples import positions as mpos
+from .utils.logger import logger
 
 # pyright: reportTypedDictNotRequiredAccess = false
 

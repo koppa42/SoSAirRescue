@@ -1,6 +1,7 @@
 from typing import Literal, Optional, Union, Callable
 import math
 from .aircraft import Aircraft
+from .utils.logger import logger
 
 DistanceCalculateMethod = Literal["Flat"] | Literal["Vincenty"] | Literal["Haversine"]
 PositionType = Literal["Sea"] | Literal["Land"]
@@ -25,6 +26,8 @@ class Map:
                     self.map[p.name] = ref + (p,)
             else:
                 self.map[p.name] = p
+        
+        logger.info(f"地图初始化完成，共有 {len(self.position)} 个地点")
 
     def __getitem__(self, index: str) -> tuple["Position", ...]:
         if index in self.map:
