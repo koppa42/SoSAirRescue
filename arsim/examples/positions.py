@@ -154,6 +154,8 @@ class NormalArea(Position):
         )
 
         logger.info(f"创建地点 {name}")
+
+
 class Source(Position):
     def __init__(
         self,
@@ -186,6 +188,9 @@ class Source(Position):
             special_condition=special_condition,
         )
 
+        logger.info(f"创建地点 {name}")
+
+
 class Destination(Position):
     def __init__(
         self,
@@ -213,3 +218,5 @@ class Destination(Position):
             0,
             special_condition=special_condition,
         )
+
+        logger.info(f"创建地点 {name}")
