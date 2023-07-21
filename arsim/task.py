@@ -649,49 +649,49 @@ def _attach_fset_侦查(self: mpos.DisasterArea, value: float, task: "Task") -> 
     self._attach_already_search = value  # type: ignore
 
     if self._attach_already_search >= self.search[1]:  # type: ignore
-        task.is_finished = True
+        task.finish()
 
 
 def _attach_fset_灭火(self: mpos.DisasterArea, value: int, task: "Task") -> None:
     self._attach_water = value  # type: ignore
 
     if self._attach_water >= self.need_water:  # type: ignore
-        task.is_finished = True
+        task.finish()
 
 
 def _attach_fset_卸货(self: mpos.DisasterArea, value: int, task: "Task") -> None:
     self._attach_supply = value  # type: ignore
 
     if self._attach_supply >= self.need_supply:  # type: ignore
-        task.is_finished = True
+        task.finish()
 
 
 def _attach_fset_吊挂(self: mpos.DisasterArea, value: int, task: "Task") -> None:
     self._attach_rescue_people = value  # type: ignore
 
     if self._attach_rescue_people >= self.need_rescue_people:  # type: ignore
-        task.is_finished = True
+        task.finish()
 
 
 def _attach_fset_载人(self: mpos.DisasterArea, value: int, task: "Task") -> None:
     self._attach_device = value  # type: ignore
 
     if self._attach_device >= self.need_device:  # type: ignore
-        task.is_finished = True
+        task.finish()
 
 
 def _attach_fset_灾民(self: mpos.DisasterArea, value: int, task: "Task") -> None:
     self._attach_trapped_people = value  # type: ignore
 
     if self._attach_trapped_people <= 0:  # type: ignore
-        task.is_finished = True
+        task.finish()
 
 
 def _attach_fset_伤患(self: mpos.DisasterArea, value: int, task: "Task") -> None:
     self._attach_patient = value  # type: ignore
 
     if self._attach_patient <= 0:  # type: ignore
-        task.is_finished = True
+        task.finish()
 
 
 class Task:
@@ -700,6 +700,7 @@ class Task:
         scene: 'Scene',
         t_type: TaskType,
         position: mpos.DisasterArea,
+        weight: float,
         /,
         on_finished: Optional[Callable[['Scene', "Task"], None]] = None,
     ) -> None:
@@ -707,6 +708,7 @@ class Task:
         self.position: mpos.DisasterArea = position
         self.type: TaskType = t_type
         self.is_finished: bool = False
+        self.weight = weight
 
         if self.position not in self.scene.map.position:
             raise PositionNotExistException(f"地点 {self.position.name} 不存在")
@@ -716,6 +718,8 @@ class Task:
         )
 
         self.attach()
+
+        logger.info(f"{self.position.name} 的 {self.type} 任务创建成功")
 
     def attach(self) -> None:
         mtask = self
@@ -810,3 +814,8 @@ class Task:
         elif self.type in ["取水", "加油保障", "装载", "运送", "吊运", "安置", "交接"]:
             logger.error(f"类型 {self.type} 不能作为任务")
             raise NotSupportedTaskException(f"类型 {self.type} 不能作为任务")
+
+    def finish(self) -> None:
+        self.is_finished = True
+        self.on_finished(self.scene, self)
+        self.used_time = self.scene.now_time
