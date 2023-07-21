@@ -1,4 +1,4 @@
-from typing import Optional, Unpack, Literal, Union
+from typing import Optional, Unpack, Literal, Callable
 from math import isclose
 
 from .aircraft import Aircraft
@@ -27,7 +27,14 @@ TimespanType = Literal["Move", "Subtask"]
 class Scene:
     MAX_RESCUE_TIME: float = 3600 * 24 * 3
 
-    def __init__(self, aircrafts: list[Aircraft], map: Map, tasks: list[Task]) -> None:
+    def __init__(
+        self,
+        aircrafts: list[Aircraft],
+        map: Map,
+        tasks: list[Task],
+        /,
+        on_subtask_finish: Optional[Callable[["Scene"], None]] = None,
+    ) -> None:
         self.aircrafts: list[Aircraft] = aircrafts
         self.map: Map = map
         self.tasks: list[Task] = tasks
@@ -35,6 +42,7 @@ class Scene:
 
         self.aircraft_to_subtask: dict[Aircraft, Optional[SubTask]] = {}
         self.aircraft_subtask_queue: dict[Aircraft, list[SubTask]] = {}
+        self.on_subtask_finish: Optional[Callable[["Scene"], None]] = on_subtask_finish
 
         self.setup_env()
 
@@ -214,6 +222,9 @@ class Scene:
                 minimum[1].task_process = 1
                 minimum[1].on_finish()
                 logger.info(f'[{self.now_time}] 航空器 {minimum[1].aircraft.name} 完成 {minimum[1].type} 任务')
+                
+                if self.on_subtask_finish is not None:
+                    self.on_subtask_finish(self)
 
             # 更新时间，
             self.now_time += minimum_consume_time

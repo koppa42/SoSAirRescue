@@ -1,6 +1,6 @@
 from ..aircraft import Aircraft, AircraftAbility
 
-Mi26 = Aircraft(
+Mi26 = lambda : Aircraft(
     2.10,
     "Mi-26 基本型",
     AircraftAbility("Freight", "Hanging", "Manned", "Fire"),
@@ -20,7 +20,7 @@ Mi26 = Aircraft(
     water_load_time=900,
     extinguishing_time=900,
 )
-Mi171 = Aircraft(
+Mi171 = lambda : Aircraft(
     0.46,
     "Mi-171 基本型",
     AircraftAbility("Freight", "Manned", "Winch", "Fire"),
@@ -34,7 +34,7 @@ Mi171 = Aircraft(
     3000,
     water_weight=3,
 )
-AC313 = Aircraft(
+AC313 = lambda : Aircraft(
     1.00,
     "AC313 基本型",
     AircraftAbility("Freight", "Manned", "Winch", "Fire"),
@@ -48,7 +48,7 @@ AC313 = Aircraft(
     5000,
     water_weight=5,
 )
-AC313Medical = Aircraft(
+AC313Medical = lambda : Aircraft(
     1.10,
     "AC313 医疗型",
     AircraftAbility("Freight", "Manned", "Winch", "Medical"),
@@ -62,7 +62,7 @@ AC313Medical = Aircraft(
     5000,
     supply_load_time=0.2,
 )
-H225 = Aircraft(
+H225 = lambda : Aircraft(
     1.86,
     "H225 救援型",
     AircraftAbility("Freight", "Manned", "Winch", "Sea"),
@@ -76,7 +76,7 @@ H225 = Aircraft(
     4500,
     supply_load_time=0.2,
 )
-H225Medical = Aircraft(
+H225Medical = lambda : Aircraft(
     1.92,
     "H225 医疗型",
     AircraftAbility("Freight", "Manned", "Winch", "Medical", "Sea"),
@@ -90,7 +90,7 @@ H225Medical = Aircraft(
     4500,
     supply_load_time=0.2,
 )
-AC352 = Aircraft(
+AC352 = lambda : Aircraft(
     1.20,
     "AC352 基本型",
     AircraftAbility("Reconnoitre", "Freight", "Manned", "Winch", "Fire", "Sea"),
@@ -104,7 +104,7 @@ AC352 = Aircraft(
     3000,
     search_time=10.68,
 )
-S76 = Aircraft(
+S76 = lambda : Aircraft(
     0.90,
     "S-76 搜救型",
     AircraftAbility("Reconnoitre", "Freight", "Manned", "Winch", "Sea"),
@@ -118,7 +118,7 @@ S76 = Aircraft(
     2300,
     search_time=12.76,
 )
-H155 = Aircraft(
+H155 = lambda : Aircraft(
     0.70,
     "H155 搜救型",
     AircraftAbility("Reconnoitre", "Freight", "Manned", "Winch", "Sea"),
@@ -133,7 +133,7 @@ H155 = Aircraft(
     supply_load_time=0.4,
     search_time=15.84,
 )
-AW169 = Aircraft(
+AW169 = lambda : Aircraft(
     0.98,
     "AW169 基本型",
     AircraftAbility("Freight", "Manned", "Winch", "Fire", "Sea"),
@@ -147,7 +147,7 @@ AW169 = Aircraft(
     2000,
     water_weight=2,
 )
-AW169Medical = Aircraft(
+AW169Medical = lambda : Aircraft(
     1.01,
     "AW169 医疗型",
     AircraftAbility("Freight", "Manned", "Winch", "Medical", "Sea"),
@@ -162,7 +162,7 @@ AW169Medical = Aircraft(
     supply_load_time=0.4,
     patient_on_off_time=300,
 )
-AC312 = Aircraft(
+AC312 = lambda : Aircraft(
     0.39,
     "AC312 救援型",
     AircraftAbility("Freight", "Manned", "Winch"),
@@ -176,7 +176,7 @@ AC312 = Aircraft(
     1600,
     supply_load_time=0.4,
 )
-AC311 = Aircraft(
+AC311 = lambda : Aircraft(
     0.20,
     "AC311 搜救型",
     AircraftAbility("Reconnoitre", "Freight", "Manned"),
@@ -191,7 +191,7 @@ AC311 = Aircraft(
     supply_load_time=0.4,
     search_time=13.46,
 )
-H135 = Aircraft(
+H135 = lambda : Aircraft(
     0.43,
     "H135 医疗型",
     AircraftAbility("Freight", "Manned", "Medical"),
@@ -206,7 +206,7 @@ H135 = Aircraft(
     supply_load_time=0.4,
     patient_on_off_time=300,
 )
-Be11429 = Aircraft(
+Be11429 = lambda : Aircraft(
     0.26,
     "Be11429 救援型",
     AircraftAbility("Freight", "Manned", "Winch"),
@@ -220,7 +220,7 @@ Be11429 = Aircraft(
     1200,
     supply_load_time=0.4,
 )
-ChangYing5E = Aircraft(
+ChangYing5E = lambda : Aircraft(
     0.24,
     "长鹰 5E 搜救型",
     AircraftAbility("Reconnoitre", "Sea"),
@@ -235,7 +235,7 @@ ChangYing5E = Aircraft(
     search_time=3.96,
     a_type="FixedWing",
 )
-YiLong2H = Aircraft(
+YiLong2H = lambda : Aircraft(
     0.19,
     "翼龙 2H 搜救型",
     AircraftAbility("Reconnoitre"),

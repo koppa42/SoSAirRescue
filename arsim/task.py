@@ -1,6 +1,6 @@
 from typing import Literal, Any, TypedDict, Unpack, NotRequired, Callable, Optional
 from math import isclose
-from .scene import Scene
+
 from .aircraft import Aircraft
 from .map import Position
 from .examples import positions as mpos
@@ -98,6 +98,8 @@ class SubTaskParams(TypedDict):
 
 
 class SubTask:
+    # from .scene import Scene
+
     _LAND_SUBTASK: list[TaskType] = [
         "装载",
         "卸货",
@@ -122,14 +124,14 @@ class SubTask:
 
     def __init__(
         self,
-        scene: Scene,
+        scene: 'Scene',
         task_type: TaskType,
         aircraft: Aircraft,
         position: Position,
         **kwargs: Unpack[SubTaskParams],
     ) -> None:
         # 所属推演场景
-        self.scene: Scene = scene
+        self.scene: 'Scene' = scene
         # 所属子任务类型
         self.type: TaskType = task_type
         # 执行任务的航空器
@@ -158,8 +160,7 @@ class SubTask:
             )
 
     def setup(self) -> None:
-        """子任务初始化
-        """
+        """子任务初始化"""
         # 移动初始化
         if self.aircraft.now_position is not None:
             # 航空器移动距离
@@ -484,8 +485,7 @@ class SubTask:
                 raise PositionNotSupportedException(f"地点 {self.position.name} 不需要侦查搜寻")
         # 消防
         elif self.type == "取水":
-            if not isinstance(self.position, mpos.NormalArea):
-                logger.error(f"不能从地点 {self.position.name} 取水")
+            if not isinstance(self.position, mpos.Source):
                 raise PositionNotSupportedException(f"不能从地点 {self.position.name} 取水")
             if self.position.water < self.addition["load_water"]:
                 logger.error(f'地点 {self.position.name} 没有 {self.addition["load_water"]} 吨水')
@@ -501,8 +501,7 @@ class SubTask:
                 raise SubTaskSucceedException(f"地点 {self.position.name} 的灭火任务已经完成")
         # 货运
         elif self.type == "装载":
-            if not isinstance(self.position, mpos.NormalArea):
-                logger.error(f"不能从地点 {self.position.name} 装载物资")
+            if not isinstance(self.position, mpos.Source):
                 raise PositionNotSupportedException(f"不能从地点 {self.position.name} 装载物资")
             if self.position.supply < self.addition["load_supply"]:
                 logger.error(f'地点 {self.position.name} 没有 {self.addition["load_supply"]} 千克物资')
@@ -518,8 +517,7 @@ class SubTask:
                 raise SubTaskSucceedException(f"地点 {self.position.name} 的物资任务已经完成")
         # 载人
         elif self.type == "运送":
-            if not isinstance(self.position, mpos.NormalArea):
-                logger.error(f"不能从地点 {self.position.name} 运送人员")
+            if not isinstance(self.position, mpos.Source):
                 raise PositionNotSupportedException(f"不能从地点 {self.position.name} 运送人员")
             if self.position.rescue_people < self.addition["load_people"]:
                 logger.error(f'地点 {self.position.name} 没有 {self.addition["load_people"]} 个人员')
@@ -537,8 +535,7 @@ class SubTask:
                 raise SubTaskSucceedException(f"地点 {self.position.name} 的投放人员任务已经完成")
         # 吊挂
         elif self.type == "吊运":
-            if not isinstance(self.position, mpos.NormalArea):
-                logger.error(f"不能从地点 {self.position.name} 吊运设备")
+            if not isinstance(self.position, mpos.Source):
                 raise PositionNotSupportedException(f"不能从地点 {self.position.name} 吊运设备")
             if self.position.device < self.addition["load_device"]:
                 logger.error(f'地点 {self.position.name} 没有 {self.addition["load_device"]} 个设备')
@@ -563,8 +560,7 @@ class SubTask:
                     f'地点 {self.position.name} 没有 {self.addition["load_refugee"]} 个灾民'
                 )
         elif self.type == "安置":
-            if not isinstance(self.position, mpos.NormalArea):
-                logger.error(f"地点 {self.position.name} 不需要安置灾民")
+            if not isinstance(self.position, mpos.Destination):
                 raise PositionNotSupportedException(f"地点 {self.position.name} 不能接受灾民")
         # 转运伤患
         elif self.type == "转运" or self.type == "绞车转运":
@@ -696,13 +692,13 @@ def _attach_fset_伤患(self: mpos.DisasterArea, value: int, task: "Task") -> No
 class Task:
     def __init__(
         self,
-        scene: Scene,
+        scene: 'Scene',
         t_type: TaskType,
         position: mpos.DisasterArea,
         /,
-        on_finished: Optional[Callable[[Scene, "Task"], None]] = None,
+        on_finished: Optional[Callable[['Scene', "Task"], None]] = None,
     ) -> None:
-        self.scene: Scene = scene
+        self.scene: 'Scene' = scene
         self.position: mpos.DisasterArea = position
         self.type: TaskType = t_type
         self.is_finished: bool = False
@@ -710,7 +706,7 @@ class Task:
         if self.position not in self.scene.map.position:
             raise PositionNotExistException(f"地点 {self.position.name} 不存在")
 
-        self.on_finished: Callable[[Scene, "Task"], None] = (
+        self.on_finished: Callable[['Scene', "Task"], None] = (
             on_finished if on_finished is not None else lambda scene, task: None
         )
 
