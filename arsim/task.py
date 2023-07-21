@@ -486,6 +486,7 @@ class SubTask:
         # 消防
         elif self.type == "取水":
             if not isinstance(self.position, mpos.Source):
+                logger.error(f"不能从地点 {self.position.name} 取水")
                 raise PositionNotSupportedException(f"不能从地点 {self.position.name} 取水")
             if self.position.water < self.addition["load_water"]:
                 logger.error(f'地点 {self.position.name} 没有 {self.addition["load_water"]} 吨水')
@@ -502,6 +503,7 @@ class SubTask:
         # 货运
         elif self.type == "装载":
             if not isinstance(self.position, mpos.Source):
+                logger.error(f"不能从地点 {self.position.name} 装载物资")
                 raise PositionNotSupportedException(f"不能从地点 {self.position.name} 装载物资")
             if self.position.supply < self.addition["load_supply"]:
                 logger.error(f'地点 {self.position.name} 没有 {self.addition["load_supply"]} 千克物资')
@@ -518,6 +520,7 @@ class SubTask:
         # 载人
         elif self.type == "运送":
             if not isinstance(self.position, mpos.Source):
+                logger.error(f"不能从地点 {self.position.name} 运送人员")
                 raise PositionNotSupportedException(f"不能从地点 {self.position.name} 运送人员")
             if self.position.rescue_people < self.addition["load_people"]:
                 logger.error(f'地点 {self.position.name} 没有 {self.addition["load_people"]} 个人员')
@@ -536,6 +539,7 @@ class SubTask:
         # 吊挂
         elif self.type == "吊运":
             if not isinstance(self.position, mpos.Source):
+                logger.error(f"不能从地点 {self.position.name} 吊运设备")
                 raise PositionNotSupportedException(f"不能从地点 {self.position.name} 吊运设备")
             if self.position.device < self.addition["load_device"]:
                 logger.error(f'地点 {self.position.name} 没有 {self.addition["load_device"]} 个设备')
@@ -561,6 +565,7 @@ class SubTask:
                 )
         elif self.type == "安置":
             if not isinstance(self.position, mpos.Destination):
+                logger.error(f"地点 {self.position.name} 不需要安置灾民")
                 raise PositionNotSupportedException(f"地点 {self.position.name} 不能接受灾民")
         # 转运伤患
         elif self.type == "转运" or self.type == "绞车转运":
